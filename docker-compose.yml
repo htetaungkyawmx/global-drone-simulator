@@ -1,0 +1,26 @@
+services:
+  global-drone-simulator:
+    platform: linux/amd64
+    build: .
+    container_name: global-drone-simulator
+    restart: unless-stopped
+    ports:
+      - "5002:5000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - SECRET_KEY=cd9a7d7dd1796ba9a1fe65f06674a02084f566e0e8b9fcbaf505019bc6a8c3d2
+      - FLASK_PORT=5000
+      - START_PORT=15001
+    volumes:
+      - ./data:/app/data:ro
+    networks:
+      - drone-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  drone-network:
+    driver: bridge
