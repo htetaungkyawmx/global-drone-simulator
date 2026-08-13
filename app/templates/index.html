@@ -45,8 +45,8 @@
     <h2>Drone Simulator Control</h2>
     <form id="configForm" onsubmit="return false;">
       <label>Host IP (GCS target)</label>
-      <input id="host" type="text" placeholder="e.g. 192.168.0.164 or 3.36.171.41" value="3.36.171.41" required />
-      <label>Select Ports (15001 - 15100)</label>
+      <input id="host" type="text" placeholder="e.g. 192.168.0.164 or 13.209.155.226" value="13.209.155.226" required />
+      <label id="portsLabel">Select Ports</label>
       <div id="ports-controls">
         <button id="selectAll" class="btn-select">Select All</button>
         <button id="deselectAll" class="btn-deselect">Deselect All</button>
@@ -93,17 +93,29 @@
   const telemetryTable = document.getElementById('telemetryTable');
   const telemetryBody = document.getElementById('telemetryBody');
 
+  // Only these port ranges are offered / pre-selected / auto-started.
+  // Edit this list if the desired range ever changes.
+  const PORT_RANGES = [[15001, 15035], [15091, 15100]];
+
+  function rangesLabel(ranges) {
+    return ranges.map(([s, e]) => (s === e ? `${s}` : `${s}-${e}`)).join(', ');
+  }
+
   function populatePorts() {
+    document.getElementById('portsLabel').textContent = `Select Ports (${rangesLabel(PORT_RANGES)})`;
     const container = document.getElementById('ports-container');
     container.innerHTML = '';
-    for (let p = 15001; p <= 15100; p++) {
-      const label = document.createElement('label');
-      const cb = document.createElement('input');
-      cb.type = 'checkbox';
-      cb.value = p;
-      label.appendChild(cb);
-      label.appendChild(document.createTextNode(' ' + p));
-      container.appendChild(label);
+    for (const [start, end] of PORT_RANGES) {
+      for (let p = start; p <= end; p++) {
+        const label = document.createElement('label');
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = p;
+        cb.checked = true; // pre-checked so Start works immediately
+        label.appendChild(cb);
+        label.appendChild(document.createTextNode(' ' + p));
+        container.appendChild(label);
+      }
     }
   }
 
@@ -254,7 +266,11 @@
   });
 
   stopBtn.disabled = true;
-  
+
+  // Auto-start guard: only attempt an automatic start once per page load,
+  // and only if the backend reports nothing is running yet.
+  let autoStartAttempted = false;
+
   async function checkInitialStatus() {
     try {
       const res = await fetch('/api/status');
@@ -263,8 +279,16 @@
         if (data.running) {
           stopBtn.disabled = false;
           statusEl.textContent = `Simulation running (${data.num_drones} drones active)`;
+          autoStartAttempted = true; // already running, no need to auto-start
         } else {
           statusEl.textContent = 'Simulation ready - Select ports and click Start';
+          if (!autoStartAttempted) {
+            autoStartAttempted = true;
+            // Auto-start with the pre-checked default ranges so the page
+            // shows live drones immediately after `docker compose up`,
+            // with no manual click needed.
+            startSimulation();
+          }
         }
       }
     } catch (err) {

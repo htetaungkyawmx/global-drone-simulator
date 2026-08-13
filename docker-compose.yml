@@ -11,6 +11,10 @@ services:
       - SECRET_KEY=cd9a7d7dd1796ba9a1fe65f06674a02084f566e0e8b9fcbaf505019bc6a8c3d2
       - FLASK_PORT=5000
       - START_PORT=15001
+      # Auto-start these drones the moment the container boots, so
+      # http://localhost:5002 shows them immediately -- no manual
+      # curl/API call needed.
+      - PORT_RANGES=15001-15035,15091-15100
     volumes:
       - ./data:/app/data:ro
     networks:
@@ -20,7 +24,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
 networks:
   drone-network:
     driver: bridge
