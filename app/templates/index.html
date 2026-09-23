@@ -95,7 +95,7 @@
 
   // Only these port ranges are offered / pre-selected / auto-started.
   // Edit this list if the desired range ever changes.
-  const PORT_RANGES = [[15001, 15035], [15091, 15100]];
+  const PORT_RANGES = [[15001, 15100]];
 
   function rangesLabel(ranges) {
     return ranges.map(([s, e]) => (s === e ? `${s}` : `${s}-${e}`)).join(', ');

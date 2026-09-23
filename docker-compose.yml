@@ -1,6 +1,7 @@
 services:
   global-drone-simulator:
     platform: linux/amd64
+    build: .
     image: uhtetaungkyaw/drone-sim:latest
     container_name: global-drone-simulator
     restart: unless-stopped
@@ -11,7 +12,7 @@ services:
       - SECRET_KEY=cd9a7d7dd1796ba9a1fe65f06674a02084f566e0e8b9fcbaf505019bc6a8c3d2
       - FLASK_PORT=5000
       - START_PORT=15001
-      - PORT_RANGES=15001-15035,15091-15100
+      - PORT_RANGES=15001-15100
     volumes:
       - ./data:/app/data:ro
     networks:
