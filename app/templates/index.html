@@ -45,7 +45,7 @@
     <h2>Drone Simulator Control</h2>
     <form id="configForm" onsubmit="return false;">
       <label>Host IP (GCS target)</label>
-      <input id="host" type="text" placeholder="e.g. 192.168.0.164 or 13.209.155.226" value="13.209.155.226" required />
+      <input id="host" type="text" placeholder="e.g. 192.168.0.164" required />
       <label id="portsLabel">Select Ports</label>
       <div id="ports-controls">
         <button id="selectAll" class="btn-select">Select All</button>
@@ -222,7 +222,9 @@
     const rows = [];
     for (const k of keys) {
       const t = data[k];
-      const last = t.timestamp ? new Date(t.timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
+      // t.timestamp is already a formatted "HH:MM:SS" string from the server,
+      // not a parseable Date -- using it directly avoids "Invalid Date".
+      const last = t.timestamp || new Date().toLocaleTimeString();
       rows.push(`
         <tr>
           <td><strong>${t.port || k}</strong></td>
@@ -267,36 +269,30 @@
 
   stopBtn.disabled = true;
 
-  // Auto-start guard: only attempt an automatic start once per page load,
-  // and only if the backend reports nothing is running yet.
-  let autoStartAttempted = false;
-
+  // Reflect actual server state only -- starting/stopping is always an
+  // explicit user action, this never auto-starts a simulation on page load.
+  // The text is left alone while it's showing "Starting…"/"Stopping…"/an
+  // error, since this poll runs right at page load and every 10s and would
+  // otherwise race a just-clicked Start/Stop and stomp its message.
   async function checkInitialStatus() {
     try {
       const res = await fetch('/api/status');
       if (res.ok) {
         const data = await res.json();
+        const busy = /^(Starting|Stopping|Error)/.test(statusEl.textContent);
         if (data.running) {
           stopBtn.disabled = false;
-          statusEl.textContent = `Simulation running (${data.num_drones} drones active)`;
-          autoStartAttempted = true; // already running, no need to auto-start
+          if (!busy) statusEl.textContent = `Simulation running (${data.num_drones} drones active)`;
         } else {
-          statusEl.textContent = 'Simulation ready - Select ports and click Start';
-          if (!autoStartAttempted) {
-            autoStartAttempted = true;
-            // Auto-start with the pre-checked default ranges so the page
-            // shows live drones immediately after `docker compose up`,
-            // with no manual click needed.
-            startSimulation();
-          }
+          stopBtn.disabled = true;
+          if (!busy) statusEl.textContent = 'Simulation ready - Select ports and click Start';
         }
       }
     } catch (err) {
       console.log('Could not check initial status:', err);
-      statusEl.textContent = 'Unable to check server status';
     }
   }
-  
+
   checkInitialStatus();
   setInterval(checkInitialStatus, 10000);
 </script>
