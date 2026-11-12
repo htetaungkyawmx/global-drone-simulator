@@ -222,7 +222,7 @@ def start_simulation():
         ports = data.get('ports', [])
 
         if not ports and COUNTRIES:
-            ports = [START_PORT + i for i in range(min(len(COUNTRIES), 100))]
+            ports = [START_PORT + i for i in range(200)]
 
         result = start_drones(ports, host)
         return jsonify(result)
